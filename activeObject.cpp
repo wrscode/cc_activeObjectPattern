@@ -1,6 +1,6 @@
 /*
  * File name: activeObject.cpp
- * Created on: Jul 5, 2017
+ * Created on: Jul 10, 2017
  *
  * author: wrscode
  */
@@ -17,8 +17,8 @@ activeObject::~activeObject() {
     thread_.join();
 }
 
-void activeObject::sendFunction(std::function<void(void)> func) {
-    queue_.pushBack(std::forward<std::function<void(void)>>(func));
+void activeObject::sendFunction(Task func) {
+    queue_.pushBack(std::forward<Task>(func));
 }
 
 void activeObject::stop(){

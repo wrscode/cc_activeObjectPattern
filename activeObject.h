@@ -1,6 +1,6 @@
 /*
  * File name: activeObject.h
- * Created on: Jul 5, 2017
+ * Created on: Jul 10, 2017
  *
  * author: wrscode
  */
@@ -14,6 +14,10 @@
 #include "sharedQueue.h"
 
 class activeObject {
+public:
+    typedef std::function<void(void)> Task;
+
+
 
 public:
     activeObject();
@@ -25,7 +29,7 @@ public:
     activeObject &operator=(const activeObject &) = delete;
     activeObject &operator=(const activeObject &&) = delete;
 
-    void sendFunction(std::function<void(void)> func);
+    void sendFunction(activeObject::Task func);
     void stop();
 
 private:
@@ -35,7 +39,7 @@ private:
 private:
     bool keepRunning_;
     std::thread thread_;
-    sharedQueue<std::function<void(void)>> queue_;
+    sharedQueue<activeObject::Task> queue_;
 };
 
 #endif /* ACTIVEOBJECT_H_ */
