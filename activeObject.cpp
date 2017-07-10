@@ -18,7 +18,7 @@ activeObject::~activeObject() {
 }
 
 void activeObject::sendFunction(std::function<void(void)> func) {
-    queue_.push(std::forward<std::function<void(void)>>(func));
+    queue_.pushBack(std::forward<std::function<void(void)>>(func));
 }
 
 void activeObject::stop(){

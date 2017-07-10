@@ -1,6 +1,6 @@
 /*
  * File name: sharedQueue.h
- * Created on: Jul 5, 2017
+ * Created on: Jul 10, 2017
  *
  * author: wrscode
  */
@@ -10,7 +10,7 @@
 
 #include <mutex>
 #include <condition_variable>
-#include <queue>
+#include <list>
 
 
 template<typename Type>
@@ -20,49 +20,60 @@ public:
     sharedQueue();
     virtual ~sharedQueue();
 
-    void push(Type func);
+    sharedQueue(const Type&) = delete;
+    sharedQueue(Type&&) = delete;
+
+    sharedQueue& operator=(const Type&) = delete;
+    sharedQueue& operator=(Type&&) = delete;
+
+    void pushFront(Type&& obj);
+    void pushBack(Type&& obj);
     Type pop();
 
     void erease();
 
 private:
-    std::queue<Type> queue_;
+    std::list<Type> queue_;
     std::mutex mutex_;
     std::condition_variable cvar_;
 };
 
 template<typename Type>
-sharedQueue<Type>::sharedQueue() {
+sharedQueue<Type>::sharedQueue() : queue_(), mutex_(), cvar_() {
 }
 
 template<typename Type>
 sharedQueue<Type>::~sharedQueue() {
 }
 
-template<typename Type>
-void sharedQueue<Type>::push(Type func) {
-
-    std::unique_lock<std::mutex> locker(mutex_);
-    queue_.push(std::forward<Type>(func));
-    cvar_.notify_all();
-    locker.unlock();
+template<class Type>
+void sharedQueue<Type>::pushFront(Type&& obj){
+    std::unique_lock<std::mutex> lock(mutex_);
+    queue_.push_front(std::forward<Type>(obj));
+    cvar_.notify_one();
 }
 
-template<typename Type>
-Type sharedQueue<Type>::pop() {
+template<class Type>
+void sharedQueue<Type>::pushBack(Type&& obj){
+    std::unique_lock<std::mutex> lock(mutex_);
+    queue_.push_back(std::forward<Type>(obj));
+    cvar_.notify_one();
+}
 
-    std::unique_lock<std::mutex> locker(mutex_);
-    cvar_.wait(locker, [this] {return (!queue_.empty());});
-    Type func = queue_.front();
-    queue_.pop();
-    locker.unlock();
-    return func;
+template<class Type>
+Type sharedQueue<Type>::pop(){
+    std::unique_lock<std::mutex> lock(mutex_);
+    cvar_.wait(lock, [this]{return (!queue_.empty());});
+    Type result = std::move(queue_.front());
+    queue_.pop_front();
+
+    return result;
 }
 
 template<typename Type>
 void sharedQueue<Type>::erease() {
     std::lock_guard<std::mutex> locker(mutex_);
-    std::queue<Type> emptyQueue;
+    std::list<Type> emptyQueue;
     std::swap(queue_, emptyQueue);
 }
 
